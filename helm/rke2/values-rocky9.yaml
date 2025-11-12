@@ -1,0 +1,133 @@
+cluster_name: rke2-rocky9
+cluster_namespace: rke2
+
+#! Generate a long random string and re-use it for every node in this cluster.
+shared_token: "BbY1%V6^vwG1n4Gg9DFgyRqqn1EWutt1vTM$B!aRbEE%kfEp"
+system_default_registry: ""
+rke2_version: v1.33.5+rke2r1
+
+#! Required if you ever need console access to a node (kubeconfig retrieval, debugging, etc).
+ssh_pub_key: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIK6LbWP3r925P5b+vFcbldXIppYkWgOsqtG6KBINXSEp jruds@ag-mbp.local"
+
+#! Extra hostnames/IPs to add to the Kubernetes api-server certificate.
+tls_san_extra:
+  - rancher.aegisgroup.ch
+
+addons:
+  cert_manager:
+    enabled: true
+    manifest_name: cert-manager.yaml
+    namespace: cert-manager
+    create_namespace: true
+    repo: https://charts.jetstack.io
+    chart: cert-manager
+    version: v1.16.1
+    values: |-
+      securityContext:
+        runAsNonRoot: true
+      crds:
+        enabled: true
+    airgap:
+      enabled: false
+      chartContent: ""            #! Populate with base64 chart when offline
+  rancher:
+    enabled: true
+    manifest_name: rancher.yaml
+    namespace: cattle-system
+    create_namespace: true
+    repo: https://releases.rancher.com/server-charts/stable
+    chart: rancher
+    version: v2.10.1
+    hostname: rancher.rke2.lab.example.com
+    replicas: 3
+    bootstrapPassword: admin
+    additionalSet: {}
+    values: |-
+      global:
+        cattle:
+          psp:
+            enabled: false
+          systemDefaultRegistry: ""   #! set to mirror registry when airgapped
+      ingress:
+        tls:
+          source: rancher
+    airgap:
+      enabled: false
+      chartContent: ""            #! Provide base64 gz chart to avoid hitting the internet
+
+# registry_config:
+#   configs:
+#     "registry.fqdn":
+#       auth:
+#         username: example
+#         password: example
+
+vm:
+  image_namespace: harvester-public        #! Namespace that stores your Rocky9 QCOW2/RAW image
+  image: rocky-9-cloudimg                   #! Harvester Image name for Rocky Linux 9
+  os: linux
+  distro: rocky
+  uefi_enabled: true
+  qemu_agent_install: true        #! Requires Internet to pull qemu-guest-agent via dnf
+  qemu_agent_enable: true
+  airgapped_image: false          #! Set true if install.sh already baked into the VM image
+
+network_name: hvst-mgmt/vlan2003       #! Harvester Network that provides L2/L3 connectivity for the nodes
+
+control_plane:
+  node_count: 3
+  cpu_count: 4
+  memory_gb: 16
+  node_disk_gb: 80
+  loadbalancer_gateway: 192.168.10.1
+  loadbalancer_subnet: 192.168.10.0/24
+  files: []
+  # files:
+  # - path: /var/lib/rancher/rke2/server/manifests/cert-manager.yaml
+  #   owner: root
+  #   content: |
+  #     <static manifest contents>
+  vip: 192.168.10.2               #! Harvester LoadBalancer VIP for kube-apiserver/ingress
+  ipam: static
+  network:
+  - |
+    version: 2
+    ethernets:
+      enp1s0:
+        dhcp4: no
+        addresses:
+          - 192.168.10.3/24
+        gateway4: 192.168.10.1
+        nameservers:
+          addresses:
+            - 192.168.10.1
+  - |
+    version: 2
+    ethernets:
+      enp1s0:
+        dhcp4: no
+        addresses:
+          - 192.168.10.4/24
+        gateway4: 192.168.10.1
+        nameservers:
+          addresses:
+            - 192.168.10.1
+  - |
+    version: 2
+    ethernets:
+      enp1s0:
+        dhcp4: no
+        addresses:
+          - 192.168.10.5/24
+        gateway4: 192.168.10.1
+        nameservers:
+          addresses:
+            - 192.168.10.1
+
+worker:
+  node_count: 2
+  cpu_count: 4
+  memory_gb: 16
+  node_disk_gb: 80
+  files: []
+  ipam: dhcp
