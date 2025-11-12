@@ -1,8 +1,10 @@
+{{- $lbNamespace := default "default" $.Values.cluster_namespace -}}
+{{- $poolName := printf "%s-%s-pool" $lbNamespace $.Values.cluster_name -}}
 ---
 apiVersion: loadbalancer.harvesterhci.io/v1beta1
 kind: IPPool
 metadata:
-  name: {{ $.Values.cluster_name }}-pool
+  name: {{ $poolName }}
 spec:
   ranges:
     - gateway: {{ .Values.control_plane.loadbalancer_gateway }}
@@ -15,8 +17,15 @@ apiVersion: loadbalancer.harvesterhci.io/v1beta1
 kind: LoadBalancer
 metadata:
   name: {{ .Values.cluster_name }}-lb
-  namespace: default
+  namespace: {{ $lbNamespace }}
+  {{- if $.Values.network_name }}
+  annotations:
+    loadbalancer.harvesterhci.io/network: {{ $.Values.network_name }}
+  {{- end }}
 spec:
+  {{- if $.Values.network_name }}
+  network: {{ $.Values.network_name }}
+  {{- end }}
   healthCheck:
     failureThreshold: 2
     port: 6443
@@ -24,7 +33,7 @@ spec:
     timeoutSeconds: 5
     periodSeconds: 5
   ipam: pool
-  ipPool: {{ .Values.cluster_name }}-pool
+  ipPool: {{ $poolName }}
   listeners:
     - name: k8s-api
       port: 6443

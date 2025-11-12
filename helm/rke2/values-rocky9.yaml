@@ -75,7 +75,7 @@ vm:
 network_name: hvst-mgmt/vlan2003       #! Harvester Network that provides L2/L3 connectivity for the nodes
 
 control_plane:
-  node_count: 3
+  node_count: 1
   cpu_count: 4
   memory_gb: 16
   node_disk_gb: 80
@@ -93,7 +93,7 @@ control_plane:
   - |
     version: 2
     ethernets:
-      enp1s0:
+      eth0:
         dhcp4: no
         addresses:
           - 192.168.10.3/24
@@ -104,7 +104,7 @@ control_plane:
   - |
     version: 2
     ethernets:
-      enp1s0:
+      eth0:
         dhcp4: no
         addresses:
           - 192.168.10.4/24
@@ -115,7 +115,7 @@ control_plane:
   - |
     version: 2
     ethernets:
-      enp1s0:
+      eth0:
         dhcp4: no
         addresses:
           - 192.168.10.5/24
@@ -125,7 +125,7 @@ control_plane:
             - 192.168.10.1
 
 worker:
-  node_count: 2
+  node_count: 0
   cpu_count: 4
   memory_gb: 16
   node_disk_gb: 80

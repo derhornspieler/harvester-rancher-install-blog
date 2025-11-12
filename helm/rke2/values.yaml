@@ -9,6 +9,50 @@ rke2_version: v1.26.10+rke2r2
 
 ssh_pub_key: ""                   #! the public ssh key to inject onto each node, required if you want to fetch a kubeconfig
 
+tls_san_extra: []                 #! optional list of hostnames/IPs appended to the RKE2 api-server certificate SANs
+
+# Add-on HelmCharts that are dropped onto each control-plane node (via /var/lib/rancher/rke2/server/manifests)
+addons:
+  cert_manager:
+    enabled: false
+    manifest_name: cert-manager.yaml
+    namespace: cert-manager
+    create_namespace: true
+    repo: https://charts.jetstack.io
+    chart: cert-manager
+    version: v1.16.1
+    values: |-
+      securityContext:
+        runAsNonRoot: true
+      crds:
+        enabled: true
+    airgap:
+      enabled: false
+      chartContent: ""            #! base64 encoded chart tgz, only used when airgap.enabled=true
+  rancher:
+    enabled: false
+    manifest_name: rancher.yaml
+    namespace: cattle-system
+    create_namespace: true
+    repo: https://releases.rancher.com/server-charts/stable
+    chart: rancher
+    version: v2.10.1
+    hostname: rancher.example.com
+    replicas: 3
+    bootstrapPassword: admin
+    additionalSet: {}             #! extra helm set values (map)
+    values: |-
+      global:
+        cattle:
+          psp:
+            enabled: false
+      ingress:
+        tls:
+          source: rancher
+    airgap:
+      enabled: false
+      chartContent: ""            #! base64 encoded chart tgz, only used when airgap.enabled=true
+
 # registry_config:
 #   configs:
 #     "rgcrprod.azurecr.us":

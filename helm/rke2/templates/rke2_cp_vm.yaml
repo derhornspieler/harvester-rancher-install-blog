@@ -70,10 +70,14 @@ spec:
               secureBoot: false
       evictionStrategy: LiveMigrate
       hostname: {{ $.Values.cluster_name }}-cp-{{ $i }}
+      {{- $networkName := default "host" $.Values.network_name -}}
+      {{- if not (contains "/" $networkName) -}}
+      {{- $networkName = printf "default/%s" $networkName -}}
+      {{- end }}
       networks:
         - name: default
           multus:
-            networkName: default/{{ $.Values.network_name }}
+            networkName: {{ $networkName }}
       volumes:
         - name: disk-0
           persistentVolumeClaim:
